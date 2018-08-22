@@ -20,14 +20,28 @@ class DocCheck extends Command
         $this->addOption('error', 'e');
     }
 
-    private function showError($targets, $input, $output) {
-        $io = new SymfonyStyle($input, $output);
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        $style = new SymfonyStyle ($input, $output);
+        $targets = explode(',', $input->getOption('target'));
+
+        if ($input->getOption('error')) {
+            $this->showError($targets, $style);
+            return;
+        }
+        $this->showProgress($output);
+
+
+        $this->showOutput($style);
+    }
+
+    private function showError($targets, $style) {
 
         $errorMessage = 'Target(s) not found:';
         foreach ($targets as $target) {
             $errorMessage .= PHP_EOL . "- $target";
         }
-        $io->getErrorStyle()->error($errorMessage);
+        $style->getErrorStyle()->error($errorMessage);
     }
 
     private function showProgress(OutputInterface $output)
@@ -44,18 +58,11 @@ class DocCheck extends Command
         $progressBar->finish();
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    /**
+     * @param $style
+     */
+    protected function showOutput($style)
     {
-        $style = new SymfonyStyle ($input, $output);
-        $targets = explode(',', $input->getOption('target'));
-
-        if ($input->getOption('error')) {
-            $this->showError($targets, $input, $output);
-            return;
-        }
-        $this->showProgress($output);
-
-
         $style->title('Files missing documentation:');
         $style->listing(array(
             'src/index.php',
