@@ -46,6 +46,7 @@ class DocCheck extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $style = new SymfonyStyle ($input, $output);
         $targets = explode(',', $input->getOption('target'));
 
         if ($input->getOption('error')) {
@@ -53,5 +54,24 @@ class DocCheck extends Command
             return;
         }
         $this->showProgress($output);
+
+
+        $style->title('Files missing documentation:');
+        $style->listing(array(
+            'src/index.php',
+            'src/foo/bar.php',
+            'next/index.php',
+            'next/fizz/buzz.php',
+        ));
+        $style->newLine();
+        $style->title('coverage:');
+        $style->table(
+            array('Target', 'Percentage'),
+            array(
+                array('src', '75%'),
+                array('nxt', '80%'),
+                array('total', '79%'),
+            )
+        );
     }
 }
