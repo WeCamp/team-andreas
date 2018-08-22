@@ -1,0 +1,11 @@
+{
+    "name": "doc-check/doc-check",
+    "description": "CLI for checking documentation coverage",
+    "type": "library",
+    "require": {
+        "symfony/console": "^4.1"
+    },
+    "autoload": {
+        "psr-4": {"DocCheck\\": "src/"}
+    }
+}
