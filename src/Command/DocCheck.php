@@ -6,6 +6,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
 class DocCheck extends Command
 {
@@ -19,8 +20,24 @@ class DocCheck extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $style = new SymfonyStyle ($input, $output);
         $target = $input->getOption('target');
-        $output->writeln($target);
-        $output->writeln('Command is active');
+        $style->title('Files missing documentation:');
+        $style->listing(array(
+            'src/index.php',
+            'src/foo/bar.php',
+            'next/index.php',
+            'next/fizz/buzz.php',
+        ));
+        $style->newLine();
+        $style->title('coverage:');
+        $style->table(
+            array('Target', 'Percentage'),
+            array(
+                array('src', '75%'),
+                array('nxt', '80%'),
+                array('total', '79%'),
+            )
+        );
     }
 }
