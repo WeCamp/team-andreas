@@ -3,9 +3,11 @@
     "description": "CLI for checking documentation coverage",
     "type": "library",
     "require": {
-        "symfony/console": "^4.1"
+        "symfony/console": "^4.1",
+        "phpdocumentor/reflection": " ~4.0"
     },
     "autoload": {
         "psr-4": {"DocCheck\\": "src/"}
-    }
+    },
+    "minimum-stability": "dev"
 }

@@ -2,6 +2,8 @@
 
 namespace DocCheck\Command;
 
+use phpDocumentor\Reflection\File\LocalFile;
+use phpDocumentor\Reflection\Php\ProjectFactory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -22,16 +24,22 @@ class DocCheck extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $style = new SymfonyStyle ($input, $output);
+        $style = new SymfonyStyle($input, $output);
+        $hasIt = $this->hasDocBlock();
+        if ($hasIt) {
+            $style->writeln("We found it!");
+        } else {
+            $style->writeln("We did not found it");
+            return;
+        }
+
         $targets = explode(',', $input->getOption('target'));
 
         if ($input->getOption('error')) {
             $this->showError($targets, $style);
             return;
         }
-        $this->showProgress($output);
-
-
+        $this->showProgress($style, $output);
         $this->showOutput($style);
     }
 
@@ -44,11 +52,11 @@ class DocCheck extends Command
         $style->getErrorStyle()->error($errorMessage);
     }
 
-    private function showProgress(OutputInterface $output)
+    private function showProgress($style, $output)
     {
         $numberOfFiles = 10;
         $progressBar = new ProgressBar($output, $numberOfFiles);
-        $output->writeln("Now processing $numberOfFiles files:");
+        $style->writeln("Now processing $numberOfFiles files:");
         $progressBar->start();
         for ($i = 0; $i < $numberOfFiles; $i++) {
             sleep(1);
@@ -80,5 +88,14 @@ class DocCheck extends Command
                 array('total', '79%'),
             )
         );
+    }
+
+    protected function hasDocBlock()
+    {
+        $projectFactory = ProjectFactory::createInstance();
+        $files = [new LocalFile('tests/example.php')];
+        $project = $projectFactory->create('MyProject', $files);
+        $docblock = $project->getFiles()['tests/example.php']->getDocBlock();
+        return $docblock !== null;
     }
 }
