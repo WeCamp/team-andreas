@@ -113,6 +113,9 @@ class DocCheck extends Command
         $files = [new LocalFile('tests/example.php')];
         $project = $projectFactory->create('MyProject', $files);
         $docblock = $project->getFiles()['tests/example.php']->getDocBlock();
-        return $docblock !== null;
+        if($docblock === null) {
+            return false;
+        }
+        return (count($docblock->getTagsByName('see')) > 0|| count($docblock->getTagsByName('link')) > 0);
     }
 }
