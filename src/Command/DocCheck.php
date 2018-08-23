@@ -22,11 +22,15 @@ class DocCheck extends Command
         $this->addOption('error', 'e');
     }
 
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $style = new SymfonyStyle($input, $output);
-        $hasIt = $this->hasDocBlock();
-        if ($hasIt) {
+
+        if ($this->hasDocBlock()) {
             $style->writeln("We found it!");
         } else {
             $style->writeln("We did not found it");
@@ -43,8 +47,12 @@ class DocCheck extends Command
         $this->showOutput($style);
     }
 
-    private function showError($targets, $style) {
-
+    /**
+     * @param string[] $targets
+     * @param SymfonyStyle $style
+     */
+    private function showError(array $targets, SymfonyStyle $style)
+    {
         $errorMessage = 'Target(s) not found:';
         foreach ($targets as $target) {
             $errorMessage .= PHP_EOL . "- $target";
@@ -52,7 +60,12 @@ class DocCheck extends Command
         $style->getErrorStyle()->error($errorMessage);
     }
 
-    private function showProgress($style, $output)
+
+    /**
+     * @param SymfonyStyle $style
+     * @param OutputInterface $output
+     */
+    private function showProgress(SymfonyStyle $style, OutputInterface $output)
     {
         $numberOfFiles = 10;
         $progressBar = new ProgressBar($output, $numberOfFiles);
@@ -66,10 +79,11 @@ class DocCheck extends Command
         $progressBar->finish();
     }
 
+
     /**
-     * @param $style
+     * @param SymfonyStyle $style
      */
-    protected function showOutput($style)
+    private function showOutput(SymfonyStyle $style)
     {
         $style->title('Files missing documentation:');
         $style->listing(array(
@@ -90,7 +104,10 @@ class DocCheck extends Command
         );
     }
 
-    protected function hasDocBlock()
+    /**
+     * @return bool
+     */
+    private function hasDocBlock(): bool
     {
         $projectFactory = ProjectFactory::createInstance();
         $files = [new LocalFile('tests/example.php')];
