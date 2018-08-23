@@ -2,6 +2,8 @@
 
 namespace DocCheck\Command;
 
+use phpDocumentor\Reflection\File\LocalFile;
+use phpDocumentor\Reflection\Php\ProjectFactory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -20,23 +22,37 @@ class DocCheck extends Command
         $this->addOption('error', 'e');
     }
 
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $style = new SymfonyStyle ($input, $output);
+        $style = new SymfonyStyle($input, $output);
+
+        if ($this->hasDocBlock()) {
+            $style->writeln("We found it!");
+        } else {
+            $style->writeln("We did not found it");
+            return;
+        }
+
         $targets = explode(',', $input->getOption('target'));
 
         if ($input->getOption('error')) {
             $this->showError($targets, $style);
             return;
         }
-        $this->showProgress($output);
-
-
+        $this->showProgress($style, $output);
         $this->showOutput($style);
     }
 
-    private function showError($targets, $style) {
-
+    /**
+     * @param string[] $targets
+     * @param SymfonyStyle $style
+     */
+    private function showError(array $targets, SymfonyStyle $style)
+    {
         $errorMessage = 'Target(s) not found:';
         foreach ($targets as $target) {
             $errorMessage .= PHP_EOL . "- $target";
@@ -44,11 +60,16 @@ class DocCheck extends Command
         $style->getErrorStyle()->error($errorMessage);
     }
 
-    private function showProgress(OutputInterface $output)
+
+    /**
+     * @param SymfonyStyle $style
+     * @param OutputInterface $output
+     */
+    private function showProgress(SymfonyStyle $style, OutputInterface $output)
     {
         $numberOfFiles = 10;
         $progressBar = new ProgressBar($output, $numberOfFiles);
-        $output->writeln("Now processing $numberOfFiles files:");
+        $style->writeln("Now processing $numberOfFiles files:");
         $progressBar->start();
         for ($i = 0; $i < $numberOfFiles; $i++) {
             sleep(1);
@@ -58,10 +79,11 @@ class DocCheck extends Command
         $progressBar->finish();
     }
 
+
     /**
-     * @param $style
+     * @param SymfonyStyle $style
      */
-    protected function showOutput($style)
+    private function showOutput(SymfonyStyle $style)
     {
         $style->title('Files missing documentation:');
         $style->listing(array(
@@ -80,5 +102,17 @@ class DocCheck extends Command
                 array('total', '79%'),
             )
         );
+    }
+
+    /**
+     * @return bool
+     */
+    private function hasDocBlock(): bool
+    {
+        $projectFactory = ProjectFactory::createInstance();
+        $files = [new LocalFile('tests/example.php')];
+        $project = $projectFactory->create('MyProject', $files);
+        $docblock = $project->getFiles()['tests/example.php']->getDocBlock();
+        return $docblock !== null;
     }
 }
