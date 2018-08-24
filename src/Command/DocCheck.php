@@ -24,7 +24,15 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 class DocCheck extends Command
 {
+    /**
+     * @var Filesystem
+     */
     private $fileSystem;
+
+    /**
+     * @var ProgressBar
+     */
+    private $progressBar;
 
     public function __construct(?string $name = null)
     {
@@ -54,6 +62,7 @@ class DocCheck extends Command
         $targets = explode(',', $input->getOption('target'));
 
         $style = new SymfonyStyle($input, $output);
+        $this->progressBar = new ProgressBar($output);
 
         $validationResult = $this->validateTargets($targets);
 
@@ -62,14 +71,27 @@ class DocCheck extends Command
             return;
         }
 
-        $results = [];
-        // Scan Targets
-        foreach ($targets as $target) {
-            $files = $this->fileSystem->listContents($target, true);
+        $totalFiles = 0;
+        $targetFiles = [];
 
+        foreach ($targets as $target) {
+            $targetFiles[$target] = $this->fileSystem->listContents($target, true);
+            $totalFiles =+ count($targetFiles[$target]);
+        }
+
+        $this->progressBar->setMaxSteps($totalFiles);
+
+        $style->writeln("Now processing $totalFiles files:");
+        $this->progressBar->start();
+
+        $results = [];
+
+        foreach ($targetFiles as $target => $files) {
             $phpFiles = array_filter($files, function ($entry) {
                 return key_exists('extension', $entry) && $entry['extension'] == 'php';
             });
+
+            $this->progressBar->advance(count($files) - count($phpFiles));
 
             $results[$target] = ['total' => count($phpFiles)];
 
@@ -77,10 +99,11 @@ class DocCheck extends Command
                 if(!$this->hasDocumentationLink($phpFile['path'])){
                     $results[$target]['failedFiles'][] = $phpFile['path'];
                 };
+                $this->progressBar->advance();
             }
         }
 
-        $this->showProgress($style, $output);
+        $this->progressBar->finish();
         $this->showOutput($style);
     }
 
@@ -96,25 +119,6 @@ class DocCheck extends Command
             $errorMessage .= PHP_EOL . "- $target";
         }
         $style->getErrorStyle()->error($errorMessage);
-    }
-
-
-    /**
-     * @param SymfonyStyle $style
-     * @param OutputInterface $output
-     */
-    private function showProgress(SymfonyStyle $style, OutputInterface $output)
-    {
-        $numberOfFiles = 10;
-        $progressBar = new ProgressBar($output, $numberOfFiles);
-        $style->writeln("Now processing $numberOfFiles files:");
-        $progressBar->start();
-        for ($i = 0; $i < $numberOfFiles; $i++) {
-            sleep(1);
-            $progressBar->advance();
-        }
-
-        $progressBar->finish();
     }
 
 
