@@ -4,7 +4,6 @@
  *
  * @see the link to the documentation
  */
-
 namespace DocCheck\Command;
 
 use League\Flysystem\Adapter\Local;
@@ -25,13 +24,25 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 class DocCheck extends Command
 {
+    private $fileSystem;
+
+    public function __construct(?string $name = null)
+    {
+        parent::__construct($name);
+
+        // Ensure that linked files are skipped as they are not supported
+        // @todo show an error message when links are found and continue?
+        $adapter = new Local(getcwd(), LOCK_EX, Local::SKIP_LINKS);
+        $this->fileSystem = new Filesystem($adapter);
+    }
+
+
     protected function configure()
     {
         $this->setName('DocCheck');
         $this->setDescription('Get the percentage of documentation coverage');
         $this->addOption('target', 't', InputOption::VALUE_REQUIRED,
             'The target where the documentation coverage is checked from');
-        $this->addOption('error', 'e');
     }
 
     /**
@@ -40,19 +51,28 @@ class DocCheck extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $targets = explode(',', $input->getOption('target'));
+
         $style = new SymfonyStyle($input, $output);
 
-        $adapter = new Local(getcwd());
-        $fileSystem = new Filesystem($adapter);
-        $targets = explode(',', $input->getOption('target'));
+        $validationResult = $this->validateTargets($targets);
+
+        if (count($validationResult)){
+            $this->showError($validationResult, $style);
+            return;
+        }
+
         $results = [];
         // Scan Targets
         foreach ($targets as $target) {
-            $files = $fileSystem->listContents($target, true);
+            $files = $this->fileSystem->listContents($target, true);
+
             $phpFiles = array_filter($files, function ($entry) {
                 return key_exists('extension', $entry) && $entry['extension'] == 'php';
             });
+
             $results[$target] = ['total' => count($phpFiles)];
+
             foreach ($phpFiles as $phpFile){
                 if(!$this->hasDocumentationLink($phpFile['path'])){
                     $results[$target]['failedFiles'][] = $phpFile['path'];
@@ -60,7 +80,6 @@ class DocCheck extends Command
             }
         }
 
-        var_dump($results);
         $this->showProgress($style, $output);
         $this->showOutput($style);
     }
@@ -137,5 +156,22 @@ class DocCheck extends Command
             return false;
         }
         return (count($docblock->getTagsByName('see')) > 0|| count($docblock->getTagsByName('link')) > 0);
+    }
+
+    /**
+     * @param $targets string[]
+     * @return string[]
+     */
+    private function validateTargets(array $targets): array
+    {
+        $validationResult = [];
+
+        foreach ($targets as $target) {
+            if (!$this->fileSystem->has($target)) {
+                $validationResult[] = $target;
+            }
+        }
+
+        return $validationResult;
     }
 }
