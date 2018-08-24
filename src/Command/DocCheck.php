@@ -4,10 +4,12 @@
  *
  * @see the link to the documentation
  */
+
 namespace DocCheck\Command;
 
 use League\Flysystem\Adapter\Local;
 use League\Flysystem\Filesystem;
+use phpDocumentor\Reflection\DocBlock;
 use phpDocumentor\Reflection\File\LocalFile;
 use phpDocumentor\Reflection\Php\ProjectFactory;
 use Symfony\Component\Console\Command\Command;
@@ -66,7 +68,7 @@ class DocCheck extends Command
 
         $validationResult = $this->validateTargets($targets);
 
-        if (count($validationResult)){
+        if (count($validationResult)) {
             $this->showError($validationResult, $style);
             return;
         }
@@ -75,7 +77,7 @@ class DocCheck extends Command
         $targetFiles = [];
         foreach ($targets as $target) {
             $targetFiles[$target] = $this->fileSystem->listContents($target, true);
-            $totalFiles =+ count($targetFiles[$target]);
+            $totalFiles = +count($targetFiles[$target]);
         }
 
         $this->progressBar->setMaxSteps($totalFiles);
@@ -99,23 +101,34 @@ class DocCheck extends Command
             $totalFiles = $totalFiles + $total;
             $results[$target] = ['total' => $total];
             $results[$target]['failedFiles'] = [];
+            $results[$target]['unparsedFiles'] = [];
 
-            foreach ($phpFiles as $phpFile){
-                if(!$this->hasDocumentationLink($phpFile['path'])){
+            foreach ($phpFiles as $phpFile) {
+                try {
+                    $hasDocumentationLink = $this->hasDocumentationLink($phpFile['path']);
+                } catch (\Throwable $t) {
+                    $results[$target]['unparsedFiles'][] = $phpFile['path'];
+                    $this->progressBar->advance();
+                    continue;
+                }
+
+                if (!$hasDocumentationLink) {
                     $results[$target]['failedFiles'][] = $phpFile['path'];
                 };
+
                 $this->progressBar->advance();
             }
 
-            $failedFiles = count($results[$target]['failedFiles']);
-            $totalFailed =+ $failedFiles;
+            $failedFiles = count($results[$target]['failedFiles']) + count($results[$target]['unparsedFiles']);
+            $totalFailed = +$failedFiles;
             $results[$target]['percentage'] = ($total - $failedFiles) / $total * 100;
 
         }
-        $results['totalPercentage'] = ($totalFiles - $totalFailed) / $totalFiles *100;
+        $results['totalPercentage'] = ($totalFiles - $totalFailed) / $totalFiles * 100;
 
         $this->progressBar->finish();
         $this->showOutput($style);
+        var_dump($results);
     }
 
     /**
@@ -167,7 +180,7 @@ class DocCheck extends Command
         $files = [new LocalFile($filePath)];
         $project = $projectFactory->create('MyProject', $files);
         $docblock = $project->getFiles()[$filePath]->getDocBlock();
-        if($docblock === null) {
+        if(!$docblock instanceof DocBlock) {
             return false;
         }
         return (count($docblock->getTagsByName('see')) > 0|| count($docblock->getTagsByName('link')) > 0);
