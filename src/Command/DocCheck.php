@@ -2,6 +2,8 @@
 
 namespace DocCheck\Command;
 
+use League\Flysystem\Adapter\Local;
+use League\Flysystem\Filesystem;
 use phpDocumentor\Reflection\File\LocalFile;
 use phpDocumentor\Reflection\Php\ProjectFactory;
 use Symfony\Component\Console\Command\Command;
@@ -30,21 +32,25 @@ class DocCheck extends Command
     {
         $style = new SymfonyStyle($input, $output);
 
-        if ($this->hasDocBlock()) {
-            $style->writeln("We found it!");
-        } else {
-            $style->writeln("We did not found it");
-            return;
-        }
-
+        $adapter = new Local(getcwd());
+        $fileSystem = new Filesystem($adapter);
         $targets = explode(',', $input->getOption('target'));
 
-        if ($input->getOption('error')) {
-            $this->showError($targets, $style);
-            return;
+        // Scan Targets
+        foreach ($targets as $target) {
+            $files = $fileSystem->listContents($target, true);
+            $phpFiles = array_filter($files, function ($entry) {
+                return key_exists('extension', $entry) && $entry['extension'] == 'php';
+            });
+
+            // scan for docblock using hasDocBlock
+            // store file location if it has no docblock
+
+            var_dump($phpFiles);
+
         }
-        $this->showProgress($style, $output);
-        $this->showOutput($style);
+//        $this->showProgress($style, $output);
+//        $this->showOutput($style);
     }
 
     /**
