@@ -45,22 +45,24 @@ class DocCheck extends Command
         $adapter = new Local(getcwd());
         $fileSystem = new Filesystem($adapter);
         $targets = explode(',', $input->getOption('target'));
-
+        $results = [];
         // Scan Targets
         foreach ($targets as $target) {
             $files = $fileSystem->listContents($target, true);
             $phpFiles = array_filter($files, function ($entry) {
                 return key_exists('extension', $entry) && $entry['extension'] == 'php';
             });
-
-            // scan for docblock using hasDocBlock
-            // store file location if it has no docblock
-
-            var_dump($phpFiles);
-
+            $results[$target] = ['total' => count($phpFiles)];
+            foreach ($phpFiles as $phpFile){
+                if(!$this->hasDocumentationLink($phpFile['path'])){
+                    $results[$target]['failedFiles'][] = $phpFile['path'];
+                };
+            }
         }
-//        $this->showProgress($style, $output);
-//        $this->showOutput($style);
+
+        var_dump($results);
+        $this->showProgress($style, $output);
+        $this->showOutput($style);
     }
 
     /**
@@ -122,14 +124,15 @@ class DocCheck extends Command
     }
 
     /**
+     * @param string $filePath
      * @return bool
      */
-    private function hasDocBlock(): bool
+    private function hasDocumentationLink(string $filePath): bool
     {
         $projectFactory = ProjectFactory::createInstance();
-        $files = [new LocalFile('tests/example.php')];
+        $files = [new LocalFile($filePath)];
         $project = $projectFactory->create('MyProject', $files);
-        $docblock = $project->getFiles()['tests/example.php']->getDocBlock();
+        $docblock = $project->getFiles()[$filePath]->getDocBlock();
         if($docblock === null) {
             return false;
         }
