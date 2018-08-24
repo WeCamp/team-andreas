@@ -36,7 +36,7 @@ class DocCheck extends Command
      */
     private $progressBar;
 
-    public function __construct(?string $name = null)
+    public function __construct(string $name = null)
     {
         parent::__construct($name);
 
@@ -87,6 +87,7 @@ class DocCheck extends Command
 
         $results = [];
         $totalFailed = 0;
+        $results['failedFiles'] = [];
 
         foreach ($targetFiles as $target => $files) {
             $phpFiles = array_filter($files, function ($entry) {
@@ -113,7 +114,9 @@ class DocCheck extends Command
                 }
 
                 if (!$hasDocumentationLink) {
-                    $results[$target]['failedFiles'][] = $phpFile['path'];
+                    $filePath = $phpFile['path'];
+                    $results[$target]['failedFiles'][] = $filePath;
+                    $results[$target][] = $filePath;
                 };
 
                 $this->progressBar->advance();
@@ -127,7 +130,7 @@ class DocCheck extends Command
         $results['totalPercentage'] = ($totalFiles - $totalFailed) / $totalFiles * 100;
 
         $this->progressBar->finish();
-        $this->showOutput($style);
+        $this->showOutput($style, $results, $targets);
         var_dump($results);
     }
 
@@ -149,24 +152,20 @@ class DocCheck extends Command
     /**
      * @param SymfonyStyle $style
      */
-    private function showOutput(SymfonyStyle $style)
+    private function showOutput(SymfonyStyle $style, $results, $targets)
     {
+        $targetpercentages = array_map(function($target) use ($results){
+            return array($target, $results[$target]['percentage'].'%');
+        }, $targets);
+        $targetpercentages[] = array('total', $results['totalPercentage'].'%');
+
         $style->title('Files missing documentation:');
-        $style->listing(array(
-            'src/index.php',
-            'src/foo/bar.php',
-            'next/index.php',
-            'next/fizz/buzz.php',
-        ));
+        $style->listing($results['failedFiles']);
         $style->newLine();
         $style->title('coverage:');
         $style->table(
             array('Target', 'Percentage'),
-            array(
-                array('src', '75%'),
-                array('nxt', '80%'),
-                array('total', '79%'),
-            )
+            $targetpercentages
         );
     }
 
