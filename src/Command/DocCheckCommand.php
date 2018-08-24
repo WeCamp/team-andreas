@@ -184,6 +184,9 @@ class DocCheckCommand extends Command
         $validationResult = [];
 
         foreach ($targets as $target) {
+            if(empty($target)){
+                continue;
+            }
             if (!$this->fileSystem->has($target)) {
                 $validationResult[] = $target;
             }
