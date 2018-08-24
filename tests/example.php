@@ -1,13 +1,13 @@
 <?php
 // phpcs:ignoreFile
+
 /**
- * Summary of the File DocBlock.
+ * This File is the part of phpDocumentor
  *
- * Description of the File.
- *
- * @package Luigi\Pizza
- * @author Mike van Riel <me@mikevanriel.com>
+ * @see the link to the documentation
  */
+
+
 namespace Luigi\Pizza
 {
     /**

@@ -1,4 +1,9 @@
 <?php
+/**
+ * This File is the part of Doc-Check
+ *
+ * @see the link to the documentation
+ */
 
 namespace DocCheck\Command;
 
@@ -11,6 +16,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+/**
+ * Class
+ *
+ * @see expected link
+ */
 class DocCheck extends Command
 {
     protected function configure()
@@ -50,6 +60,7 @@ class DocCheck extends Command
     /**
      * @param string[] $targets
      * @param SymfonyStyle $style
+     * @link some link to the documentation
      */
     private function showError(array $targets, SymfonyStyle $style)
     {
