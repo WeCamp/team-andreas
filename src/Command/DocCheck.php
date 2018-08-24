@@ -63,6 +63,8 @@ class DocCheck extends Command
         }
 
         $results = [];
+        $totalFiles = 0;
+        $totalFailed = 0;
         // Scan Targets
         foreach ($targets as $target) {
             $files = $this->fileSystem->listContents($target, true);
@@ -70,15 +72,22 @@ class DocCheck extends Command
             $phpFiles = array_filter($files, function ($entry) {
                 return key_exists('extension', $entry) && $entry['extension'] == 'php';
             });
-
-            $results[$target] = ['total' => count($phpFiles)];
-
+            $total = count($phpFiles);
+            $totalFiles = $totalFiles + $total;
+            $results[$target] = ['total' => $total];
+            $results[$target]['failedFiles'] = [];
             foreach ($phpFiles as $phpFile){
                 if(!$this->hasDocumentationLink($phpFile['path'])){
                     $results[$target]['failedFiles'][] = $phpFile['path'];
                 };
             }
+            $failedFiles = count($results[$target]['failedFiles']);
+            $totalFailed = $totalFailed + $failedFiles;
+            $results[$target]['percentage'] = ($total - $failedFiles) / $total * 100;
+
+
         }
+        $results['totalPercentage'] = ($totalFiles - $totalFailed) / $totalFiles *100;
 
         $this->showProgress($style, $output);
         $this->showOutput($style);
