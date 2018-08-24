@@ -5,8 +5,7 @@
     "require": {
         "symfony/console": "^4.1",
         "phpdocumentor/reflection": " ~4.0",
-        "league/flysystem": "^1.1@dev",
-        "phpdocumentor/flyfinder": "^1.0@dev"
+        "league/flysystem": "^1.1@dev"
     },
     "autoload": {
         "psr-4": {"DocCheck\\": "src/"}
