@@ -24,7 +24,15 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 class DocCheck extends Command
 {
+    /**
+     * @var Filesystem
+     */
     private $fileSystem;
+
+    /**
+     * @var ProgressBar
+     */
+    private $progressBar;
 
     public function __construct(?string $name = null)
     {
@@ -54,6 +62,7 @@ class DocCheck extends Command
         $targets = explode(',', $input->getOption('target'));
 
         $style = new SymfonyStyle($input, $output);
+        $this->progressBar = new ProgressBar($output);
 
         $validationResult = $this->validateTargets($targets);
 
@@ -62,34 +71,50 @@ class DocCheck extends Command
             return;
         }
 
-        $results = [];
         $totalFiles = 0;
-        $totalFailed = 0;
-        // Scan Targets
+        $targetFiles = [];
         foreach ($targets as $target) {
-            $files = $this->fileSystem->listContents($target, true);
+            $targetFiles[$target] = $this->fileSystem->listContents($target, true);
+            $totalFiles =+ count($targetFiles[$target]);
+        }
 
+        $this->progressBar->setMaxSteps($totalFiles);
+
+        $style->writeln("Now processing $totalFiles files:");
+        $this->progressBar->start();
+
+        $results = [];
+        $totalFailed = 0;
+
+        foreach ($targetFiles as $target => $files) {
             $phpFiles = array_filter($files, function ($entry) {
                 return key_exists('extension', $entry) && $entry['extension'] == 'php';
             });
+
+            $this->progressBar->advance(count($files) - count($phpFiles));
+
+            $results[$target] = ['total' => count($phpFiles)];
+
             $total = count($phpFiles);
             $totalFiles = $totalFiles + $total;
             $results[$target] = ['total' => $total];
             $results[$target]['failedFiles'] = [];
+
             foreach ($phpFiles as $phpFile){
                 if(!$this->hasDocumentationLink($phpFile['path'])){
                     $results[$target]['failedFiles'][] = $phpFile['path'];
                 };
+                $this->progressBar->advance();
             }
-            $failedFiles = count($results[$target]['failedFiles']);
-            $totalFailed = $totalFailed + $failedFiles;
-            $results[$target]['percentage'] = ($total - $failedFiles) / $total * 100;
 
+            $failedFiles = count($results[$target]['failedFiles']);
+            $totalFailed =+ $failedFiles;
+            $results[$target]['percentage'] = ($total - $failedFiles) / $total * 100;
 
         }
         $results['totalPercentage'] = ($totalFiles - $totalFailed) / $totalFiles *100;
 
-        $this->showProgress($style, $output);
+        $this->progressBar->finish();
         $this->showOutput($style);
     }
 
@@ -105,25 +130,6 @@ class DocCheck extends Command
             $errorMessage .= PHP_EOL . "- $target";
         }
         $style->getErrorStyle()->error($errorMessage);
-    }
-
-
-    /**
-     * @param SymfonyStyle $style
-     * @param OutputInterface $output
-     */
-    private function showProgress(SymfonyStyle $style, OutputInterface $output)
-    {
-        $numberOfFiles = 10;
-        $progressBar = new ProgressBar($output, $numberOfFiles);
-        $style->writeln("Now processing $numberOfFiles files:");
-        $progressBar->start();
-        for ($i = 0; $i < $numberOfFiles; $i++) {
-            sleep(1);
-            $progressBar->advance();
-        }
-
-        $progressBar->finish();
     }
 
 
