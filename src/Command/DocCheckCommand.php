@@ -7,6 +7,7 @@
 
 namespace DocCheck\Command;
 
+use DocCheck\Command\Result\Target;
 use League\Flysystem\Adapter\Local;
 use League\Flysystem\Filesystem;
 use phpDocumentor\Reflection\DocBlock;
@@ -24,7 +25,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  *
  * @see expected link
  */
-class DocCheck extends Command
+class DocCheckCommand extends Command
 {
     /**
      * @var Filesystem
@@ -85,53 +86,41 @@ class DocCheck extends Command
         $style->writeln("Now processing $totalFiles files:");
         $this->progressBar->start();
 
-        $results = [];
-        $totalFailed = 0;
-        $results['failedFiles'] = [];
+        $result = new Result();
 
         foreach ($targetFiles as $target => $files) {
+            $targetResult = new Target();
+            $targetResult->setName($target);
+
             $phpFiles = array_filter($files, function ($entry) {
                 return key_exists('extension', $entry) && $entry['extension'] == 'php';
             });
 
+            $targetResult->addFilteredFiles($phpFiles);
+
             $this->progressBar->advance(count($files) - count($phpFiles));
-
-            $results[$target] = ['total' => count($phpFiles)];
-
-            $total = count($phpFiles);
-            $totalFiles = $totalFiles + $total;
-            $results[$target] = ['total' => $total];
-            $results[$target]['failedFiles'] = [];
-            $results[$target]['unparsedFiles'] = [];
 
             foreach ($phpFiles as $phpFile) {
                 try {
                     $hasDocumentationLink = $this->hasDocumentationLink($phpFile['path']);
                 } catch (\Throwable $t) {
-                    $results[$target]['unparsedFiles'][] = $phpFile['path'];
+                    $targetResult->addUnparsedFiles([$phpFile['path']]);
                     $this->progressBar->advance();
                     continue;
                 }
 
                 if (!$hasDocumentationLink) {
-                    $filePath = $phpFile['path'];
-                    $results[$target]['failedFiles'][] = $filePath;
-                    $results[$target][] = $filePath;
+                    $targetResult->addFailedFiles([$phpFile['path']]);
+
                 };
 
                 $this->progressBar->advance();
             }
-
-            $failedFiles = count($results[$target]['failedFiles']) + count($results[$target]['unparsedFiles']);
-            $totalFailed = +$failedFiles;
-            $results[$target]['percentage'] = ($total - $failedFiles) / $total * 100;
-
+            $result->addTarget($targetResult);
         }
-        $results['totalPercentage'] = ($totalFiles - $totalFailed) / $totalFiles * 100;
 
         $this->progressBar->finish();
-        $this->showOutput($style, $results, $targets);
-        var_dump($results);
+        $this->showOutput($style, $result);
     }
 
     /**
@@ -151,21 +140,22 @@ class DocCheck extends Command
 
     /**
      * @param SymfonyStyle $style
+     * @param Result $result
      */
-    private function showOutput(SymfonyStyle $style, $results, $targets)
+    private function showOutput(SymfonyStyle $style, Result $result)
     {
-        $targetpercentages = array_map(function($target) use ($results){
-            return array($target, $results[$target]['percentage'].'%');
-        }, $targets);
-        $targetpercentages[] = array('total', $results['totalPercentage'].'%');
-
+        $unparsedFiles = $result->getUnparsedFiles();
         $style->title('Files missing documentation:');
-        $style->listing($results['failedFiles']);
+        $style->listing($result->getFailedFiles());
         $style->newLine();
-        $style->title('coverage:');
+        if(count($unparsedFiles) > 0) {
+            $style->title('Unparsed files:');
+            $style->listing($unparsedFiles);
+        }
+        $style->newLine();
+        $style->title('Coverage:');
         $style->table(
-            array('Target', 'Percentage'),
-            $targetpercentages
+            array('Target', 'No. files', 'Percentage'),$result->getTotals()
         );
     }
 

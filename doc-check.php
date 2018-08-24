@@ -16,9 +16,9 @@ foreach (array(__DIR__ . '/../../autoload.php', __DIR__ . '/../vendor/autoload.p
 }
 
 use Symfony\Component\Console\Application;
-use \DocCheck\Command\DocCheck;
+use \DocCheck\Command\DocCheckCommand;
 
-$command = new DocCheck();
+$command = new DocCheckCommand();
 
 $application = new Application();
 $application->add($command);
