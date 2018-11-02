@@ -3,6 +3,8 @@
 namespace DocCheck\Command;
 
 use DocCheck\Command\Result\Target;
+use Symfony\Component\Console\Style\SymfonyStyle;
+use League\Flysystem\Filesystem;
 
 class Result
 {
@@ -11,9 +13,13 @@ class Result
      */
     private $targets = [];
 
-    public function __construct($targets, $fileSystem) {
+    /**
+     * @param FileSystem $fileSystem
+     * @param SymfonyStyle $style
+     */
+    public function __construct($targets, FileSystem $fileSystem, SymfonyStyle $style) {
         foreach($targets as $target) {
-            array_push($this->targets, new Target($target, $fileSystem));
+            array_push($this->targets, new Target($target, $fileSystem, $style));
         }
     }
 

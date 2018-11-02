@@ -32,11 +32,6 @@ class DocCheckCommand extends Command
      */
     private $fileSystem;
 
-    /**
-     * @var ProgressBar
-     */
-    private $progressBar;
-
     public function __construct(string $name = null)
     {
         parent::__construct($name);
@@ -65,7 +60,6 @@ class DocCheckCommand extends Command
         $targets = explode(',', $input->getOption('target'));
 
         $style = new SymfonyStyle($input, $output);
-        $this->progressBar = new ProgressBar($output);
 
         $validationResult = $this->validateTargets($targets);
 
@@ -81,13 +75,8 @@ class DocCheckCommand extends Command
             $totalFiles = +count($targetFiles[$target]);
         }
 
-        $this->progressBar->setMaxSteps($totalFiles);
-
         $style->writeln("Now processing $totalFiles files:");
-        $this->progressBar->start();
-
-        $result = new Result($targets, $this->fileSystem);
-        $this->progressBar->finish();
+        $result = new Result($targets, $this->fileSystem, $style);
         $this->showOutput($style, $result);
     }
 
