@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Coverage results</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <link rel="stylesheet" type="text/css" href="test-result.css">
+</head>
+<body>
+<div id="app" class="container">
+  <h1>Coverage results of project</h1>
+  <div id="results-summary">
+    <div id="results">
+      <div>{{results.percentage}}</div>
+      <div>{{results.filesChecked}}</div>
+      <div>{{results.filesCovered}}</div>
+      <div>{{results.filesInconclusive}}</div>
+      <div>{{results.filesFailed}}</div>
+    </div>
+    <div id="topics">
+      <div>coverage</div>
+      <div>files checked</div>
+      <div>file covered</div>
+      <div>file inconclusive</div>
+      <div>file failed</div>
+    </div>
+  </div>
+
+  <h1>Coverage per file</h1>
+
+  <div id="table" class="table">
+    <div class="table-header">
+      <div class="header-item">
+        Name
+      </div>
+      <div class="header-item">
+        Total
+      </div>
+    </div>
+    <div class="table-content">
+      <div class="table-row" v-for="result in fileResults" v-bind:class="{ 'not-covered': result.coverage === '0%', 'inconclusive': result.coverage === '?'}">
+        <div class="table-data">{{result.fileName}}</div>
+        <div class="table-data">{{result.coverage}}</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="test-result.js"></script>
+</body>
+</html>

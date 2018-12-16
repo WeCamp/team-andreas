@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700');
+
+*, *:before, *:after {
+  box-sizing:border-box;
+}
+
+body {
+  font-family:'Source Sans Pro', sans-serif;
+  margin:0;
+}
+
+h1 {
+  color: #0059A7;
+}
+
+.table {
+  width:100%;
+  border:1px solid #EEEEEE;
+}
+
+.table-header {
+  display:flex;
+  width:100%;
+  background:#000;
+  padding: 18px 0;
+}
+
+.table-row {
+  display:flex;
+  width:100%;
+  padding:18px 0;
+  background-color: #94fc94;
+}
+
+.table-data, .header-item {
+  flex: 1 1 auto;
+  margin: 0 32px;
+}
+
+.table-data:last-child, .header-item:last-child {
+  text-align: right;
+}
+
+.header-item {
+  text-transform:uppercase;
+  color: #FFFFFF;
+}
+
+.not-covered {
+  background-color: #ffaab0;
+}
+
+.inconclusive {
+  background-color: #eaeaea;
+}
+
+#results-summary {
+  display: flex;
+  margin-bottom: 32px;
+}
+
+#results > div {
+  font-weight: bold;
+  font-style: italic;
+  font-size: 45px;
+  align-items: center;
+  color: #555;
+  height: 55px;
+}
+
+#topics {
+  display: flex;
+  flex-direction: column;
+  margin-left: 32px;
+}
+
+#topics > div {
+  height: 55px;
+  line-height: 55px;
+}
+
+
